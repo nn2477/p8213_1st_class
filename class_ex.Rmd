@@ -1,0 +1,86 @@
+---
+title: ''
+author: "Nhu Nguyen"
+date: "2024-01-17"
+output: html_document
+---
+
+```{r}
+##importing data 
+sample_rx_df = 
+  readxl::read_excel("Sample_Rx_2023_East.xlsx")
+
+## figuring out total paid amount
+sample_rx_df %>% 
+  summarise(total_paid = sum(Paid, na.rm = TRUE)) %>%
+  pull(total_paid)
+
+##top total paid amount by drug class
+sample_rx_df %>% 
+  group_by(DrugClass) %>% 
+  summarise(total_paid = sum(Paid, na.rm = TRUE)) %>% 
+  arrange(desc(total_paid)) %>% 
+  top_n(10)
+  
+```
+
+
+```{r}
+## finding unique member ID for the 10 drug classes
+## % of total people submitting drugs, and what percent are in each group
+result <- Sample_Rx_2023_East %>%
+  group_by(DrugClass) %>%
+  summarise(total_paid = sum(Paid, na.rm = TRUE))
+
+# Finding unique member ID for the 10 drug classes
+# % of total people submitting drugs, and what percent are in each group
+member_count <- Sample_Rx_2023_East %>%
+  group_by(DrugClass) %>%
+  summarise(unique_members = n_distinct(Member))
+
+# Merging the results
+result <- left_join(result, member_count, by = "DrugClass")
+
+# Finding the top 10 for the result based on total paid
+result_sorted <- result %>%
+  arrange(desc(total_paid)) %>%
+  head(10)
+
+# Finding top 10 ranked by member count
+member_count_sorted <- member_count %>%
+  arrange(desc(unique_members)) %>%
+  head(10)
+
+# Printing the results
+print(result_sorted)
+print(member_count_sorted)
+```
+
+
+## maggie's way
+
+```{r}
+#reading the data
+library(readxl)
+Sample_Rx_2023_East <- read_excel("Sample_Rx_2023_East.xlsx")
+
+#summing paid amount by drugclass
+result <- aggregate(Paid ~ DrugClass, data=Sample_Rx_2023_East, sum)
+print (result)
+
+
+
+#finding unique member ID for the 10 drug classes
+#% of total people submitting drugs, and what percent are in each group
+member_count <- aggregate(Member ~ DrugClass, data = Sample_Rx_2023_East, FUN = function(x) length(unique(x)))
+result <- merge(result, member_count, by = "DrugClass", all.x = TRUE)
+
+#finding the top 10 for the result
+result_sorted <- result[order(result$Paid, decreasing = TRUE),]
+head(result_sorted, 10)
+
+#finding top 10 ranked by member count
+member_count_sorted <- member_count[order(member_count$Member, decreasing = TRUE),]
+head(member_count_sorted,10)
+```
+
